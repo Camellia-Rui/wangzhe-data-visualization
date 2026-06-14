@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>王者荣耀 · 英雄羁绊图谱</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Microsoft YaHei', sans-serif; 
+            background: linear-gradient(135deg, #0a0a1a 0%, #1a1a2e 100%);
+            min-height: 100vh;
+            transition: background-image 0.5s ease;
+        }
+        body.bg-canyon { background-image: url('./峡谷.png'); background-size: cover; background-position: center; background-attachment: fixed; }
+        body.bg-world { background-image: url('./王者世界.png'); background-size: cover; background-position: center; background-attachment: fixed; }
+        body.bg-school { background-image: url('./稷下学宫.png'); background-size: cover; background-position: center; background-attachment: fixed; }
+        
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(15, 15, 30, 0.65);
+            backdrop-filter: blur(2px);
+            z-index: -1;
+        }
+        
+        .app { display: flex; flex-direction: column; height: 100vh; position: relative; z-index: 1; }
+        
+        .header { 
+            background: rgba(0,0,0,0.65); 
+            backdrop-filter: blur(12px); 
+            padding: 12px 24px; 
+            border-bottom: 1px solid rgba(255,215,0,0.2);
+        }
+        
+        .logo h1 { 
+            background: linear-gradient(135deg, #e8d5a3, #c9a86b); 
+            -webkit-background-clip: text; 
+            background-clip: text; 
+            color: transparent; 
+            font-size: 1.5rem; 
+            font-weight: 400;
+            letter-spacing: 2px;
+        }
+        .logo p { color: #9a8a6e; font-size: 0.7rem; margin-top: 2px; letter-spacing: 1px; }
+        
+        .back-btn {
+            position: fixed;
+            top: 20px;
+            right: 24px;
+            background: rgba(0,0,0,0.5);
+            border: 1px solid rgba(200,180,120,0.4);
+            color: #d4c5a3;
+            padding: 8px 20px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            z-index: 100;
+            text-decoration: none;
+            transition: 0.2s;
+        }
+        .back-btn:hover {
+            background: rgba(200,180,120,0.2);
+            color: #ecd68a;
+        }
+        
+        .control-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 10px;
+        }
+        
+        .bg-section, .filter-section, .search-section {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(0,0,0,0.4);
+            padding: 5px 15px;
+            border-radius: 40px;
+            backdrop-filter: blur(4px);
+        }
+        .bg-label, .filter-label, .search-label {
+            color: #b8a87a;
+            font-size: 0.75rem;
+            letter-spacing: 1px;
+        }
+        .bg-btn-group, .filter-group {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+        .bg-btn, .filter-btn {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(200,180,120,0.3);
+            color: #c8bc9a;
+            padding: 5px 14px;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 0.75rem;
+        }
+        .bg-btn:hover, .filter-btn:hover {
+            background: rgba(200,180,120,0.15);
+            color: #ecd68a;
+        }
+        .bg-btn.active, .filter-btn.active {
+            background: #c9a86b;
+            color: #1a1a2e;
+            border-color: #c9a86b;
+            font-weight: bold;
+        }
+        
+        .search-input {
+            background: rgba(0,0,0,0.5);
+            border: 1px solid rgba(200,180,120,0.4);
+            border-radius: 30px;
+            padding: 5px 12px;
+            color: #e8d5a3;
+            font-size: 0.75rem;
+            width: 130px;
+            outline: none;
+            transition: 0.2s;
+        }
+        .search-input:focus {
+            border-color: #c9a86b;
+            box-shadow: 0 0 5px rgba(201,168,107,0.3);
+        }
+        .search-input::placeholder {
+            color: #6a5a3a;
+        }
+        .search-btn {
+            background: rgba(200,180,120,0.15);
+            border: 1px solid rgba(200,180,120,0.4);
+            color: #ecd68a;
+            padding: 5px 14px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 0.7rem;
+            transition: 0.2s;
+        }
+        .search-btn:hover {
+            background: #c9a86b;
+            color: #1a1a2e;
+        }
+        
+        .stats-bar { 
+            background: rgba(0,0,0,0.4); 
+            backdrop-filter: blur(8px); 
+            padding: 6px 24px; 
+            display: flex; 
+            gap: 32px; 
+            font-size: 0.75rem; 
+            color: #9a8a6e; 
+            border-bottom: 1px solid rgba(200,180,120,0.15);
+        }
+        .stat-label { color: #c8bc9a; }
+        .graph-container { flex: 1; position: relative; }
+        #relationChart { width: 100%; height: 100%; }
+        
+        .detail-panel { 
+            position: fixed; 
+            right: 0; 
+            top: 80px; 
+            width: 380px; 
+            max-height: calc(100vh - 100px); 
+            background: rgba(20, 18, 28, 0.95); 
+            backdrop-filter: blur(16px); 
+            border-left: 3px solid #c9a86b; 
+            border-radius: 16px 0 0 16px; 
+            transform: translateX(100%); 
+            transition: transform 0.3s; 
+            z-index: 200; 
+            overflow-y: auto; 
+            padding: 20px; 
+            color: #e0d4c0; 
+        }
+        .detail-panel.show { transform: translateX(0); }
+        .panel-header { display: flex; justify-content: space-between; margin-bottom: 16px; border-bottom: 1px solid rgba(200,180,120,0.3); }
+        .panel-header h3 { color: #ecd68a; font-size: 1.3rem; font-weight: 400; }
+        .close-btn { background: none; border: none; color: #9a8a6e; font-size: 24px; cursor: pointer; }
+        .close-btn:hover { color: #ecd68a; }
+        
+        .hero-detail-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(200,180,120,0.2);
+        }
+        .hero-detail-avatar {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #c9a86b;
+            background: rgba(0,0,0,0.5);
+        }
+        .hero-detail-name {
+            font-size: 1.5rem;
+            color: #ecd68a;
+            margin-bottom: 5px;
+            font-weight: 400;
+        }
+        .hero-role-badge {
+            display: inline-block;
+            background: rgba(200,180,120,0.15);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            color: #c8bc9a;
+        }
+        .hero-forms-badge {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 8px;
+        }
+        .form-tag {
+            background: rgba(200,180,120,0.15);
+            padding: 2px 8px;
+            border-radius: 15px;
+            font-size: 0.65rem;
+            color: #ecd68a;
+        }
+        
+        .section-title { color: #c9a86b; margin: 16px 0 10px; font-size: 0.85rem; letter-spacing: 1px; }
+        .relation-list { display: flex; flex-direction: column; gap: 8px; }
+        .relation-card { background: rgba(255,255,255,0.04); border-radius: 12px; padding: 10px 12px; cursor: pointer; border-left: 3px solid; transition: 0.2s; }
+        .relation-card:hover { background: rgba(200,180,120,0.1); transform: translateX(-4px); }
+        .relation-target { font-weight: bold; margin-bottom: 4px; }
+        .relation-desc { font-size: 0.75rem; opacity: 0.85; margin: 4px 0; }
+        .relation-type { font-size: 0.65rem; margin-top: 4px; }
+        
+        .loading-overlay { 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            right: 0; 
+            bottom: 0; 
+            background: #0a0a1a; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            z-index: 1000; 
+            flex-direction: column; 
+        }
+        .spinner { width: 48px; height: 48px; border: 4px solid rgba(200,180,120,0.2); border-top: 4px solid #c9a86b; border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        @media (max-width: 768px) {
+            .control-bar { flex-direction: column; align-items: stretch; }
+            .detail-panel { width: 100%; right: 0; top: auto; bottom: 0; max-height: 60vh; border-radius: 16px 16px 0 0; border-left: none; border-top: 3px solid #c9a86b; }
+        }
+    </style>
+</head>
+<body class="bg-canyon">
+<a href="../index.html" class="back-btn">← 返回首页</a>
+
+<div class="app">
+    <div class="header">
+        <div class="logo">
+            <h1>英雄羁绊图谱</h1>
+            <p>力导向关系网络 · 点击头像查看羁绊</p>
+        </div>
+        <div class="control-bar">
+            <div class="bg-section">
+                <span class="bg-label">场景</span>
+                <div class="bg-btn-group">
+                    <button class="bg-btn active" data-bg="canyon">峡谷</button>
+                    <button class="bg-btn" data-bg="world">王者世界</button>
+                    <button class="bg-btn" data-bg="school">稷下学宫</button>
+                </div>
+            </div>
+            <div class="filter-section">
+                <span class="filter-label">筛选</span>
+                <div class="filter-group" id="filterGroup">
+                    <button class="filter-btn active" data-type="all">全部</button>
+                    <button class="filter-btn" data-type="couple">情侣</button>
+                    <button class="filter-btn" data-type="family">亲情</button>
+                    <button class="filter-btn" data-type="camp">阵营</button>
+                    <button class="filter-btn" data-type="friend">挚友</button>
+                    <button class="filter-btn" data-type="enemy">敌对</button>
+                    <button class="filter-btn" data-type="other">其他</button>
+                </div>
+            </div>
+            <div class="search-section">
+                <span class="search-label">搜索</span>
+                <input type="text" id="searchInput" placeholder="输入英雄名..." class="search-input">
+                <button id="searchBtn" class="search-btn">跳转</button>
+            </div>
+        </div>
+    </div>
+    <div class="stats-bar">
+        <div><span class="stat-label">英雄总数</span> <span id="totalHeroes">--</span></div>
+        <div><span class="stat-label">羁绊总数</span> <span id="totalLinks">--</span></div>
+        <div><span class="stat-label">操作提示</span> 拖拽节点 · 滚轮缩放 · 点击头像</div>
+    </div>
+    <div class="graph-container">
+        <div id="relationChart"></div>
+    </div>
+</div>
+
+<div id="detailPanel" class="detail-panel">
+    <div class="panel-header">
+        <h3 id="panelTitle">英雄详情</h3>
+        <button class="close-btn" id="closePanelBtn">×</button>
+    </div>
+    <div id="panelContent">
+        <div style="text-align:center; padding:40px; color:#7a6a4a;">点击任意英雄探索羁绊</div>
+    </div>
+</div>
+
+<div id="loadingOverlay" class="loading-overlay">
+    <div class="spinner"></div>
+    <div style="color:#c9a86b;">加载英雄羁绊数据中...</div>
+</div>
+
+<script>
+    let chart = null;
+    let fullNodes = [];
+    let fullLinks = [];
+    let nodeMap = new Map();
+    let allRelations = new Map();
+    let currentFilter = 'all';
+
+    const bgClasses = { canyon: 'bg-canyon', world: 'bg-world', school: 'bg-school' };
+    function switchBackground(bgId) {
+        document.body.classList.remove('bg-canyon', 'bg-world', 'bg-school');
+        document.body.classList.add(bgClasses[bgId]);
+        document.querySelectorAll('.bg-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.bg === bgId);
+        });
+    }
+    document.querySelectorAll('.bg-btn').forEach(btn => {
+        btn.addEventListener('click', () => switchBackground(btn.dataset.bg));
+    });
+
+    function getAvatarPath(heroName) {
+        return `./images/${encodeURIComponent(heroName)}.bmp`;
+    }
+
+    function cropToCircle(imgSrc, size = 80) {
+        return new Promise((resolve) => {
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            
+            const img = new Image();
+            img.crossOrigin = 'Anonymous';
+            
+            img.onload = function() {
+                ctx.clearRect(0, 0, size, size);
+                const scale = Math.max(size / img.width, size / img.height);
+                const x = (size - img.width * scale) / 2;
+                const y = (size - img.height * scale) / 2;
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
+                ctx.closePath();
+                ctx.clip();
+                ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
+                ctx.restore();
+                ctx.beginPath();
+                ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
+                ctx.strokeStyle = '#c9a86b';
+                ctx.lineWidth = 2.5;
+                ctx.stroke();
+                resolve(canvas.toDataURL('image/png'));
+            };
+            
+            img.onerror = function() {
+                console.warn(`图片加载失败: ${imgSrc}`);
+                ctx.fillStyle = '#2a2530';
+                ctx.beginPath();
+                ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#c9a86b';
+                ctx.lineWidth = 2.5;
+                ctx.stroke();
+                resolve(canvas.toDataURL('image/png'));
+            };
+            
+            img.src = imgSrc;
+        });
+    }
+
+    // 更自然的角色颜色（低饱和度、暖色调）
+    const roleColors = {
+        "坦克": "#b87c5a",
+        "战士": "#8e6b4a",
+        "刺客": "#6a5a7a",
+        "法师": "#5a7a6e",
+        "射手": "#7a8a5a",
+        "辅助": "#6a8a7a",
+        "全能": "#9a8a6a"
+    };
+
+    const typeNames = {
+        couple: "情侣", family: "亲情", camp: "阵营",
+        friend: "挚友", enemy: "敌对", other: "其他"
+    };
+
+    async function loadData() {
+        try {
+            const response = await fetch('./data.json');
+            const jsonData = await response.json();
+            const heroes = jsonData.heroes;
+            const nodes = [];
+            let idx = 0;
+            
+            for (const [name, info] of Object.entries(heroes)) {
+                nodes.push({
+                    id: idx,
+                    name: name,
+                    role: info.role || "战士",
+                    originalColor: roleColors[info.role] || "#8a7a5a",
+                    imgPath: getAvatarPath(name)
+                });
+                nodeMap.set(name, idx);
+                idx++;
+            }
+            
+            const linksRaw = jsonData.links;
+            const links = [];
+            linksRaw.forEach((link, linkIdx) => {
+                const sourceId = nodeMap.get(link.source);
+                const targetId = nodeMap.get(link.target);
+                if (sourceId === undefined || targetId === undefined) return;
+                
+                let lineStyle = { width: 2, curveness: 0.2, opacity: 0.6 };
+                if (link.type === 'couple') lineStyle.color = '#d4a574';
+                else if (link.type === 'family') lineStyle.color = '#8ab87a';
+                else if (link.type === 'camp') lineStyle.color = '#7a9ab8';
+                else if (link.type === 'friend') lineStyle.color = '#b8a87a';
+                else if (link.type === 'enemy') lineStyle.color = '#b87a7a';
+                else lineStyle.color = '#8a7a6a';
+                
+                const edgeObj = {
+                    id: linkIdx, source: sourceId, target: targetId,
+                    sourceName: link.source, targetName: link.target, type: link.type,
+                    description: link.description || "存在羁绊关系",
+                    reverseDescription: link.reverseDescription || link.description || "存在羁绊关系",
+                    lineStyle: lineStyle
+                };
+                links.push(edgeObj);
+                allRelations.set(`${link.source},${link.target}`, edgeObj);
+                allRelations.set(`${link.target},${link.source}`, edgeObj);
+            });
+            
+            fullNodes = nodes;
+            fullLinks = links;
+            document.getElementById('totalHeroes').innerText = nodes.length;
+            document.getElementById('totalLinks').innerText = links.length;
+            
+            document.getElementById('loadingOverlay').style.display = 'flex';
+            
+            const promises = nodes.map(node => cropToCircle(node.imgPath, 70));
+            const circularAvatars = await Promise.all(promises);
+            
+            fullNodes.forEach((node, index) => {
+                node.circularAvatar = circularAvatars[index];
+            });
+            
+            document.getElementById('loadingOverlay').style.display = 'none';
+            initChart();
+            setupSearch();
+            
+        } catch (err) {
+            console.error("数据加载失败:", err);
+            document.getElementById('loadingOverlay').innerHTML = '<div style="color:#b87a7a;">数据加载失败</div>';
+        }
+    }
+
+    function initChart() {
+        const dom = document.getElementById('relationChart');
+        if (chart) chart.dispose();
+        chart = echarts.init(dom);
+        
+        const nodesData = fullNodes.map(n => ({
+            id: n.id,
+            name: n.name,
+            role: n.role,
+            symbol: `image://${n.circularAvatar}`,
+            symbolSize: 55,
+            itemStyle: { color: n.originalColor }
+        }));
+        
+        const option = {
+            tooltip: { show: false, trigger: 'none' },
+            series: [{
+                type: 'graph',
+                layout: 'force',
+                roam: true,
+                draggable: true,
+                force: { 
+                    repulsion: 800, 
+                    edgeLength: 180, 
+                    gravity: 0.12, 
+                    friction: 0.2, 
+                    layoutAnimation: true 
+                },
+                data: nodesData,
+                links: fullLinks.map(l => ({ 
+                    source: l.source, 
+                    target: l.target, 
+                    lineStyle: l.lineStyle, 
+                    sourceName: l.sourceName, 
+                    targetName: l.targetName 
+                })),
+                label: { show: false },
+                emphasis: { 
+                    focus: 'adjacency', 
+                    lineStyle: { width: 3, color: '#ecd68a' },
+                    label: { show: false }
+                },
+                lineStyle: { curveness: 0.2, width: 2 },
+                animation: true,
+                animationDuration: 1200
+            }]
+        };
+        chart.setOption(option);
+        
+        chart.on('click', (params) => {
+            if (params.dataType === 'node') {
+                showHeroDetail(params.data.name);
+            } else if (params.dataType === 'edge') {
+                showEdgeDetail(params.data.sourceName, params.data.targetName);
+            }
+        });
+        
+        window.addEventListener('resize', () => chart.resize());
+    }
+
+    function applyFilter(type) {
+        currentFilter = type;
+        
+        const nodesData = fullNodes.map(n => ({
+            id: n.id, name: n.name, role: n.role,
+            symbol: `image://${n.circularAvatar}`,
+            symbolSize: 55,
+            itemStyle: { color: n.originalColor }
+        }));
+        
+        if (type === 'all') {
+            chart.setOption({
+                series: [{
+                    data: nodesData,
+                    links: fullLinks.map(l => ({ 
+                        source: l.source, target: l.target, lineStyle: l.lineStyle, 
+                        sourceName: l.sourceName, targetName: l.targetName 
+                    }))
+                }]
+            });
+        } else {
+            const activeNodeNames = new Set();
+            fullLinks.forEach(link => {
+                if (link.type === type) {
+                    activeNodeNames.add(link.sourceName);
+                    activeNodeNames.add(link.targetName);
+                }
+            });
+            
+            const updatedNodes = nodesData.map(n => ({
+                ...n,
+                symbolSize: activeNodeNames.has(n.name) ? 60 : 42,
+                itemStyle: activeNodeNames.has(n.name) 
+                    ? { color: n.itemStyle.color, opacity: 1 }
+                    : { color: '#4a3a2a', opacity: 0.3 },
+            }));
+            
+            const filteredLinks = fullLinks
+                .filter(link => link.type === type)
+                .map(l => ({ 
+                    source: l.source, target: l.target, lineStyle: l.lineStyle, 
+                    sourceName: l.sourceName, targetName: l.targetName 
+                }));
+            
+            chart.setOption({
+                series: [{
+                    data: updatedNodes,
+                    links: filteredLinks
+                }]
+            });
+        }
+        
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.type === type);
+        });
+    }
+
+    function showHeroDetail(heroName) {
+        const heroNode = fullNodes.find(n => n.name === heroName);
+        if (!heroNode) return;
+        
+        const relatedLinks = fullLinks.filter(l => l.sourceName === heroName || l.targetName === heroName);
+        const avatarUrl = getAvatarPath(heroName);
+        
+        let roleHtml = '';
+        if (heroName === '元流之子') {
+            roleHtml = `
+                <div class="hero-role-badge">五形态</div>
+                <div class="hero-forms-badge">
+                    <span class="form-tag">元坦</span>
+                    <span class="form-tag">元刺</span>
+                    <span class="form-tag">元法</span>
+                    <span class="form-tag">元射</span>
+                    <span class="form-tag">元辅</span>
+                </div>
+            `;
+        } else {
+            roleHtml = `<div class="hero-role-badge">${heroNode.role}</div>`;
+        }
+        
+        let relationsHtml = `<div class="section-title">羁绊关系 · ${relatedLinks.length}</div><div class="relation-list">`;
+        relatedLinks.forEach(link => {
+            const isSource = link.sourceName === heroName;
+            const otherName = isSource ? link.targetName : link.sourceName;
+            const desc = isSource ? link.description : link.reverseDescription;
+            const type = link.type;
+            let borderColor = { couple:'#d4a574', family:'#8ab87a', camp:'#7a9ab8', friend:'#b8a87a', enemy:'#b87a7a' }[type] || '#8a7a6a';
+            relationsHtml += `<div class="relation-card" style="border-left-color: ${borderColor};" onclick="showEdgeDetail('${heroName}', '${otherName}'); event.stopPropagation();">
+                <div class="relation-target">${heroName} → ${otherName}</div>
+                <div class="relation-desc">${desc || '羁绊'}</div>
+                <div class="relation-type" style="color:${borderColor};">${typeNames[type] || type}</div>
+            </div>`;
+        });
+        relationsHtml += `</div>`;
+        
+        document.getElementById('panelTitle').innerHTML = `英雄信息`;
+        document.getElementById('panelContent').innerHTML = `
+            <div class="hero-detail-header">
+                <img class="hero-detail-avatar" src="${avatarUrl}" onerror="this.src='./images/default.bmp'" alt="${heroName}">
+                <div class="hero-detail-info">
+                    <div class="hero-detail-name">${heroName}</div>
+                    ${roleHtml}
+                </div>
+            </div>
+            ${relationsHtml}
+            <div style="margin-top: 16px; padding: 12px; background: rgba(0,0,0,0.3); border-radius: 12px; font-size: 0.7rem; color: #6a5a3a; text-align: center;">
+                点击关系卡片查看详细描述
+            </div>
+        `;
+        document.getElementById('detailPanel').classList.add('show');
+    }
+
+    window.showEdgeDetail = function(source, target) {
+        const link = allRelations.get(`${source},${target}`);
+        let detailHtml = `<div class="section-title">羁绊详解</div>
+            <div class="relation-card" style="margin-bottom: 16px; background: rgba(200,180,120,0.08);">
+                <div class="relation-target">${source} → ${target}</div>
+                <div class="relation-desc" style="font-size:0.9rem; margin:8px 0;">${link ? link.description : "存在羁绊关系"}</div>
+            </div>`;
+        if (link && link.reverseDescription && link.reverseDescription !== link.description) {
+            detailHtml += `<div class="relation-card" style="background: rgba(200,180,120,0.04);">
+                <div class="relation-target">${target} → ${source}</div>
+                <div class="relation-desc" style="font-size:0.9rem; margin:8px 0;">${link.reverseDescription}</div>
+            </div>`;
+        }
+        detailHtml += `<div style="margin-top: 20px; padding: 12px; background: rgba(0,0,0,0.3); border-radius: 12px;">
+            <div style="color:#9a8a6a;">关系类型：${link ? (typeNames[link.type] || link.type) : "其他"}</div>
+            <div style="margin-top: 12px; display: flex; gap: 12px;">
+                <button onclick="showHeroDetail('${source}')" style="background: rgba(200,180,120,0.15); border:none; color:#ecd68a; padding:6px 14px; border-radius: 20px; cursor:pointer;">← 查看 ${source}</button>
+                <button onclick="showHeroDetail('${target}')" style="background: rgba(200,180,120,0.15); border:none; color:#ecd68a; padding:6px 14px; border-radius: 20px; cursor:pointer;">查看 ${target} →</button>
+            </div>
+        </div>`;
+        document.getElementById('panelTitle').innerHTML = `${source} · ${target}`;
+        document.getElementById('panelContent').innerHTML = detailHtml;
+        document.getElementById('detailPanel').classList.add('show');
+    };
+
+    document.getElementById('closePanelBtn').addEventListener('click', () => {
+        document.getElementById('detailPanel').classList.remove('show');
+    });
+
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            applyFilter(btn.dataset.type);
+        });
+    });
+
+    function setupSearch() {
+        const searchInput = document.getElementById('searchInput');
+        const searchBtn = document.getElementById('searchBtn');
+        
+        function performSearch() {
+            const keyword = searchInput.value.trim();
+            if (!keyword) return;
+            
+            const matchedNode = fullNodes.find(node => 
+                node.name === keyword || node.name.includes(keyword)
+            );
+            
+            if (matchedNode) {
+                showHeroDetail(matchedNode.name);
+                if (chart) {
+                    chart.dispatchAction({
+                        type: 'highlight',
+                        seriesIndex: 0,
+                        name: matchedNode.name
+                    });
+                    setTimeout(() => {
+                        chart.dispatchAction({
+                            type: 'downplay',
+                            seriesIndex: 0,
+                            name: matchedNode.name
+                        });
+                    }, 3000);
+                }
+            } else {
+                alert(`未找到英雄: ${keyword}`);
+            }
+        }
+        
+        searchBtn.addEventListener('click', performSearch);
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') performSearch();
+        });
+    }
+
+    loadData();
+</script>
+</body>
+</html>

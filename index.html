@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>王者荣耀 · 数据可视化大屏</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Microsoft YaHei', 'PingFang SC', 'Helvetica Neue', sans-serif;
+            background: linear-gradient(135deg, #0a0a1a 0%, #1a1a2e 50%, #16213e 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .container {
+            text-align: center;
+            padding: 40px;
+        }
+        h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, #ffd700, #ff8c00);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 20px;
+            letter-spacing: 2px;
+        }
+        .subtitle {
+            color: #aaa;
+            margin-bottom: 50px;
+            font-size: 1rem;
+            letter-spacing: 1px;
+        }
+        .card-grid {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .card {
+            background: rgba(255,255,255,0.08);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,215,0,0.3);
+            border-radius: 20px;
+            padding: 30px 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            width: 280px;
+        }
+        .card:nth-child(2) {
+            width: 310px;
+        }
+        .card:hover {
+            transform: translateY(-10px);
+            background: rgba(255,215,0,0.15);
+            border-color: #ffd700;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+        .card-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .card-icon svg {
+            width: 64px;
+            height: 64px;
+            stroke: #f0f0f0;
+            stroke-width: 1.5;
+            fill: none;
+        }
+        .card h2 {
+            background: linear-gradient(135deg, #ffe6b3, #ffcc66, #ffaa33);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+            white-space: nowrap;
+            font-weight: 600;
+        }
+        .card p {
+            color: #aaa;
+            font-size: 0.85rem;
+            line-height: 1.5;
+        }
+        .footer {
+            margin-top: 60px;
+            color: #555;
+            font-size: 0.7rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>王者荣耀 · 数据可视化大屏</h1>
+        <div class="subtitle">Heroes of Glory · Data Visualization Dashboard</div>
+        
+        <div class="card-grid">
+            <div class="card" onclick="location.href='hero-bond/index.html'">
+                <div class="card-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#f0f0f0" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="2" y1="12" x2="22" y2="12"/>
+                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                        <path d="M2 12 L12 2 L22 12 L12 22 Z"/>
+                    </svg>
+                </div>
+                <h2>英雄羁绊图谱</h2>
+                <p>力导向关系网络 | 126英雄 × 276羁绊 | 双向关系描述</p>
+            </div>
+            
+            <div class="card" onclick="location.href='hero-skin/index.html'">
+                <div class="card-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#f0f0f0" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2L15 9H22L16 14L19 21L12 17L5 21L8 14L2 9H9L12 2Z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M5 6 L7 4"/>
+                        <path d="M19 6 L17 4"/>
+                    </svg>
+                </div>
+                <h2>英雄皮肤 & 个人属性</h2>
+                <p>皮肤图鉴 | 品质分布 | 英雄属性雷达图</p>
+            </div>
+            
+            <div class="card" onclick="location.href='hero-battle/index.html'">
+                <div class="card-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#f0f0f0" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="20" x2="12" y2="10"/>
+                        <line x1="18" y1="20" x2="18" y2="4"/>
+                        <line x1="6" y1="20" x2="6" y2="16"/>
+                        <rect x="2" y="20" width="20" height="2"/>
+                    </svg>
+                </div>
+                <h2>英雄出战数据</h2>
+                <p>出场率 | 胜率 | Ban率 | 数据趋势分析</p>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>数据来源：王者荣耀官方设定 & 游戏数据统计 | 信息可视化课程项目</p>
+        </div>
+    </div>
+</body>
+</html>
