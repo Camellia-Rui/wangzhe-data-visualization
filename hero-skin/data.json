@@ -1,0 +1,14 @@
+[
+    {"hero": "鲁班七号", "survival": 0.7, "attack": 8, "skill": 2, "difficulty": 3, "hp": 3366},
+    {"hero": "貂蝉", "survival": 3, "attack": 1.7, "skill": 5.8, "difficulty": 5, "hp": 3205},
+    {"hero": "妲己", "survival": 1.7, "attack": 1, "skill": 7, "difficulty": 1.7, "hp": 3295},
+    {"hero": "吕布", "survival": 4.8, "attack": 5, "skill": 2.6, "difficulty": 3.2, "hp": 3587},
+    {"hero": "后羿", "survival": 2.2, "attack": 6.5, "skill": 3.1, "difficulty": 2.3, "hp": 3362},
+    {"hero": "虞姬", "survival": 3.2, "attack": 6.6, "skill": 4, "difficulty": 3.2, "hp": 3234},
+    {"hero": "孙尚香", "survival": 2.2, "attack": 6.6, "skill": 4, "difficulty": 4.8, "hp": 3329},
+    {"hero": "诸葛亮", "survival": 2.4, "attack": 0.6, "skill": 6.4, "difficulty": 4.8, "hp": 3300},
+    {"hero": "公孙离", "survival": 1.6, "attack": 6.6, "skill": 2.6, "difficulty": 5.8, "hp": 3219},
+    {"hero": "曜", "survival": 5.6, "attack": 4, "skill": 5, "difficulty": 3.4, "hp": 3304},
+    {"hero": "武则天", "survival": 1.4, "attack": 0.8, "skill": 8, "difficulty": 5, "hp": 3200},
+    {"hero": "司马懿", "survival": 4, "attack": 4, "skill": 7.4, "difficulty": 4, "hp": 3257}
+]

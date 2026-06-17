@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>王者荣耀 · 英雄皮肤关系网络图</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
+            background-image: url('Images/底图.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        .main-container {
+            display: flex;
+            width: 100%;
+            height: 100vh;
+            position: relative;
+        }
+
+        .chart-container {
+            flex: 1;
+            height: 100vh;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #network {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .sidebar {
+            width: 360px;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.55);
+            backdrop-filter: blur(12px);
+            border-left: 1px solid rgba(255, 255, 255, 0.15);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            z-index: 20;
+            color: #ffffff;
+            flex-shrink: 0;
+        }
+
+        .sidebar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .sidebar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .sidebar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.4);
+            border-radius: 4px;
+        }
+
+        .header {
+            text-align: center;
+            padding: 20px 20px 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #ffffff;
+            letter-spacing: 2px;
+        }
+
+        .info-panel {
+            flex: 1;
+            padding: 20px 20px 10px 20px;
+        }
+
+        .info-panel h3 {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 12px;
+            letter-spacing: 1px;
+        }
+
+        .info-content {
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        .hero-name {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 12px;
+            letter-spacing: 1px;
+        }
+
+        .hero-stat {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+
+        .hero-stat strong {
+            color: #ffffff;
+            font-weight: 600;
+        }
+
+        .section-title {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.7);
+            margin: 14px 0 8px 0;
+            letter-spacing: 0.5px;
+        }
+
+        .quality-list {
+            margin-top: 6px;
+        }
+
+        .quality-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 0.85rem;
+        }
+
+        .quality-name {
+            color: rgba(255, 255, 255, 0.85);
+        }
+
+        .quality-count {
+            color: #ffffff;
+            font-weight: 600;
+        }
+
+        .quality-name-large {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 12px;
+        }
+
+        .hero-list {
+            margin-top: 6px;
+        }
+
+        .hero-list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 0.85rem;
+        }
+
+        .hero-list-name {
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .hero-list-count {
+            color: #ffffff;
+            font-weight: 600;
+        }
+
+        .empty-tip {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.8rem;
+            text-align: center;
+            padding: 15px 0;
+        }
+
+        .radar-container {
+            margin-top: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+
+        .radar-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.85);
+            margin-bottom: 8px;
+            text-align: center;
+            letter-spacing: 1px;
+        }
+
+        .radar-chart {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+        }
+
+        #radarCanvas {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            width: 100%;
+            max-width: 310px;
+            height: auto;
+            aspect-ratio: 1/1;
+        }
+
+        .controls-note {
+            margin: 12px 16px 16px;
+            font-size: 0.6rem;
+            color: rgba(255, 255, 255, 0.4);
+            text-align: center;
+            padding: 6px;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar { width: 300px; }
+            .hero-name { font-size: 1.3rem; }
+            #radarCanvas { max-width: 260px; }
+        }
+    </style>
+</head>
+<body>
+<div class="main-container">
+    <div class="chart-container">
+        <div id="network"></div>
+    </div>
+
+    <div class="sidebar">
+        <div class="header">
+            <h1>英雄·皮肤关系网络</h1>
+        </div>
+
+        <div class="info-panel">
+            <h3>当前选中</h3>
+            <div class="info-content" id="infoContent">
+                <div class="empty-tip">悬停或点击任意节点查看详情</div>
+            </div>
+            <div class="radar-container" id="radarContainer" style="display: none;">
+                <div class="radar-title">英雄属性</div>
+                <div class="radar-chart">
+                    <canvas id="radarCanvas" width="620" height="620"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls-note">
+            拖拽画布 / 滚动缩放 | 拖动节点调整布局
+        </div>
+    </div>
+</div>
+
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script>
+    const container = document.getElementById('network');
+    let width = container.clientWidth;
+    let height = container.clientHeight;
+    
+    let graphData = { nodes: [], links: [] };
+    let svg, g, simulation, zoom;
+    let link, nodeGroup;
+    let isInitialized = false;
+    
+    const qualityColors = {
+        "伴生": "#6c91b2",
+        "勇者": "#5da0a0",
+        "史诗": "#e8b43c",
+        "传说": "#e8763c",
+        "珍品传说": "#d45a7a",
+        "无双": "#b05fd9",
+        "荣耀典藏": "#f5a623",
+        "珍品无双": "#ff77aa"
+    };
+    const heroColor = "#ff6b6b";
+    const qualities = ["伴生", "勇者", "史诗", "传说", "珍品传说", "无双", "荣耀典藏", "珍品无双"];
+    
+    const imageCache = new Map();
+    const qualityImageCache = new Map();
+    let radarDataMap = new Map();
+    
+    const HP_MIN = 2793;
+    const HP_MAX = 3725;
+    const IMAGE_PATH = 'Images/';
+    
+    function mapHpToRange(hp) {
+        const clampedHp = Math.max(HP_MIN, Math.min(HP_MAX, hp));
+        return ((clampedHp - HP_MIN) / (HP_MAX - HP_MIN)) * 8;
+    }
+
+    async function loadData() {
+        try {
+            const heroesData = await d3.json("skin_data.json");
+            const radarData = await d3.json("data.json");
+            
+            radarData.forEach(item => {
+                radarDataMap.set(item.hero, item);
+            });
+            
+            console.log("加载成功:", heroesData.length, "个英雄");
+            
+            const heroNodes = heroesData.map(hero => ({
+                id: hero.hero,
+                type: "hero",
+                name: hero.hero,
+                totalSkins: hero.totalSkins,
+                limited: hero.limited,
+                skinQuality: hero.skinQuality,
+                group: "hero"
+            }));
+            
+            const qualityNodes = qualities.map(q => ({
+                id: q,
+                type: "quality",
+                name: q,
+                group: "quality"
+            }));
+            
+            graphData.nodes = [...heroNodes, ...qualityNodes];
+            
+            const links = [];
+            heroesData.forEach(hero => {
+                const qualitiesObj = hero.skinQuality;
+                for (let [quality, count] of Object.entries(qualitiesObj)) {
+                    if (count > 0 && qualities.includes(quality)) {
+                        links.push({
+                            source: hero.hero,
+                            target: quality,
+                            value: count,
+                            quality: quality,
+                            heroName: hero.hero
+                        });
+                    }
+                }
+            });
+            graphData.links = links;
+            
+            await preloadHeroImages(heroesData.map(h => h.hero));
+            await preloadQualityImages(qualities);
+            
+            initChart();
+        } catch (error) {
+            console.error("加载失败:", error);
+            document.getElementById("network").innerHTML = `
+                <div style="color:#ff8888; text-align:center; margin-top:80px; padding:20px; background:rgba(0,0,0,0.7); border-radius:12px;">
+                    ❌ 加载数据失败！<br><br>
+                    请确保 skin_data.json 和 data.json 与 HTML 在同一目录<br>
+                    图片放在 Images 文件夹下
+                </div>
+            `;
+        }
+    }
+
+    function preloadHeroImages(heroNames) {
+        return new Promise((resolve) => {
+            let loadedCount = 0;
+            const total = heroNames.length;
+            if (total === 0) { resolve(); return; }
+            
+            heroNames.forEach(heroName => {
+                const img = new Image();
+                img.onload = () => {
+                    imageCache.set(heroName, img);
+                    loadedCount++;
+                    if (loadedCount === total) resolve();
+                };
+                img.onerror = () => {
+                    console.warn(`英雄图片加载失败: ${IMAGE_PATH}${heroName}.png`);
+                    imageCache.set(heroName, null);
+                    loadedCount++;
+                    if (loadedCount === total) resolve();
+                };
+                img.src = `${IMAGE_PATH}${heroName}.png`;
+            });
+        });
+    }
+
+    function preloadQualityImages(qualityNames) {
+        return new Promise((resolve) => {
+            let loadedCount = 0;
+            const total = qualityNames.length;
+            if (total === 0) { resolve(); return; }
+            
+            qualityNames.forEach(qualityName => {
+                const img = new Image();
+                img.onload = () => {
+                    qualityImageCache.set(qualityName, img);
+                    loadedCount++;
+                    if (loadedCount === total) resolve();
+                };
+                img.onerror = () => {
+                    console.warn(`品质图片加载失败: ${IMAGE_PATH}${qualityName}.jpg，使用纯色替代`);
+                    qualityImageCache.set(qualityName, null);
+                    loadedCount++;
+                    if (loadedCount === total) resolve();
+                };
+                img.src = `${IMAGE_PATH}${qualityName}.jpg`;
+            });
+        });
+    }
+
+    function initChart() {
+        d3.select("#network").selectAll("*").remove();
+        
+        svg = d3.select("#network")
+            .append("svg")
+            .attr("width", width)
+            .attr("height", height);
+        
+        zoom = d3.zoom()
+            .scaleExtent([0.3, 3])
+            .on("zoom", (event) => {
+                g.attr("transform", event.transform);
+            });
+        
+        svg.call(zoom);
+        
+        g = svg.append("g");
+        
+        const totalNodes = graphData.nodes.length;
+        const radius = Math.min(width, height) * 0.35;
+        const centerX = width / 2;
+        const centerY = height / 2;
+        
+        graphData.nodes.forEach((node, i) => {
+            const angle = (i / totalNodes) * Math.PI * 2;
+            node.x = centerX + radius * Math.cos(angle) + (Math.random() - 0.5) * 80;
+            node.y = centerY + radius * Math.sin(angle) + (Math.random() - 0.5) * 80;
+            node.fx = null;
+            node.fy = null;
+        });
+        
+        simulation = d3.forceSimulation(graphData.nodes)
+            .force("link", d3.forceLink(graphData.links)
+                .id(d => d.id)
+                .distance(d => 180 - Math.min(60, d.value * 6))
+                .strength(0.2)
+            )
+            .force("charge", d3.forceManyBody()
+                .strength(d => d.type === "hero" ? -500 : -350)
+                .distanceMin(40)
+                .distanceMax(400)
+            )
+            .force("center", d3.forceCenter(width / 2, height / 2).strength(0.05))
+            .force("collision", d3.forceCollide()
+                .radius(d => getNodeRadius(d) + 20)
+                .strength(0.8)
+            )
+            .alphaDecay(0.02)
+            .velocityDecay(0.45);
+        
+        link = g.append("g")
+            .attr("class", "links")
+            .selectAll("line")
+            .data(graphData.links)
+            .enter()
+            .append("line")
+            .attr("stroke", "#ffcc00")
+            .attr("stroke-opacity", 0.8)
+            .attr("stroke-width", 2);
+        
+        nodeGroup = g.append("g")
+            .attr("class", "nodes")
+            .selectAll("g")
+            .data(graphData.nodes)
+            .enter()
+            .append("g")
+            .attr("class", "node-group")
+            .call(drag(simulation));
+        
+        renderNodes();
+        
+        nodeGroup.append("text")
+            .attr("dy", d => {
+                const r = getNodeRadius(d);
+                if (d.type === "hero") {
+                    return -r - 8;
+                } else {
+                    return r + 22;
+                }
+            })
+            .attr("text-anchor", "middle")
+            .attr("font-size", d => d.type === "quality" ? "13px" : "11px")
+            .attr("font-weight", d => d.type === "quality" ? "bold" : "normal")
+            .attr("fill", d => d.type === "quality" ? "#ffffff" : "transparent")
+            .attr("stroke", d => d.type === "quality" ? "#111" : "none")
+            .attr("stroke-width", "0.5px")
+            .text(d => d.name);
+        
+        setupInteractions();
+        
+        simulation.on("tick", () => {
+            if (!nodeGroup) return;
+            
+            nodeGroup.attr("transform", d => {
+                d.x = Math.max(40, Math.min(width - 40, d.x));
+                d.y = Math.max(40, Math.min(height - 40, d.y));
+                return `translate(${d.x},${d.y})`;
+            });
+            
+            link.attr("x1", d => d.source.x)
+                .attr("y1", d => d.source.y)
+                .attr("x2", d => d.target.x)
+                .attr("y2", d => d.target.y);
+        });
+        
+        simulation.force("link").links(graphData.links);
+        simulation.alpha(0.8).restart();
+        isInitialized = true;
+    }
+    
+    function renderNodes() {
+        nodeGroup.each(function(d) {
+            const group = d3.select(this);
+            const r = getNodeRadius(d);
+            
+            group.selectAll(".hero-bg, .quality-bg, .hero-img, .quality-img, .hero-fallback, .quality-fallback").remove();
+            
+            if (d.type === "hero") {
+                group.append("circle")
+                    .attr("r", r + 2)
+                    .attr("fill", "#ffffff")
+                    .attr("stroke", "#ffd700")
+                    .attr("stroke-width", 2.5)
+                    .attr("class", "hero-bg");
+                
+                const defs = svg.select("defs");
+                const globalDefs = defs.empty() ? svg.append("defs") : defs;
+                const clipId = `clip-${d.id.replace(/\s/g, '')}`;
+                
+                if (globalDefs.select(`#${clipId}`).empty()) {
+                    globalDefs.append("clipPath")
+                        .attr("id", clipId)
+                        .append("circle")
+                        .attr("r", r)
+                        .attr("cx", 0)
+                        .attr("cy", 0);
+                }
+                
+                const img = group.append("image")
+                    .attr("href", imageCache.get(d.name) ? `${IMAGE_PATH}${d.name}.png` : "")
+                    .attr("x", -r)
+                    .attr("y", -r)
+                    .attr("width", r * 2)
+                    .attr("height", r * 2)
+                    .attr("clip-path", `url(#${clipId})`)
+                    .attr("class", "hero-img");
+                
+                img.on("error", function() {
+                    d3.select(this).remove();
+                    group.append("circle")
+                        .attr("r", r)
+                        .attr("fill", heroColor)
+                        .attr("class", "hero-fallback");
+                });
+            } else {
+                const qualityImg = qualityImageCache.get(d.name);
+                
+                if (qualityImg) {
+                    const defs = svg.select("defs");
+                    const globalDefs = defs.empty() ? svg.append("defs") : defs;
+                    const clipId = `clip-quality-${d.id.replace(/\s/g, '')}`;
+                    
+                    if (globalDefs.select(`#${clipId}`).empty()) {
+                        globalDefs.append("clipPath")
+                            .attr("id", clipId)
+                            .append("circle")
+                            .attr("r", r)
+                            .attr("cx", 0)
+                            .attr("cy", 0);
+                    }
+                    
+                    group.append("circle")
+                        .attr("r", r + 2)
+                        .attr("fill", "#ffffff")
+                        .attr("stroke", "#ffd700")
+                        .attr("stroke-width", 2)
+                        .attr("class", "quality-bg");
+                    
+                    group.append("image")
+                        .attr("href", `${IMAGE_PATH}${d.name}.jpg`)
+                        .attr("x", -r)
+                        .attr("y", -r)
+                        .attr("width", r * 2)
+                        .attr("height", r * 2)
+                        .attr("clip-path", `url(#${clipId})`)
+                        .attr("class", "quality-img");
+                } else {
+                    group.append("circle")
+                        .attr("r", r)
+                        .attr("fill", qualityColors[d.name] || "#4ecdc4")
+                        .attr("stroke", "#fff")
+                        .attr("stroke-width", 2)
+                        .attr("class", "quality-fallback");
+                }
+            }
+        });
+    }
+    
+    function setupInteractions() {
+        nodeGroup.on("mouseover", function(event, d) {
+            const relatedLinks = graphData.links.filter(l => l.source.id === d.id || l.target.id === d.id);
+            const relatedNodeIds = new Set();
+            relatedLinks.forEach(l => {
+                relatedNodeIds.add(l.source.id);
+                relatedNodeIds.add(l.target.id);
+            });
+            
+            link.attr("stroke-opacity", l => {
+                if (l.source.id === d.id || l.target.id === d.id) return 1;
+                return 0.15;
+            }).attr("stroke-width", l => {
+                if (l.source.id === d.id || l.target.id === d.id) return 2.5;
+                return 1.5;
+            });
+            
+            nodeGroup.selectAll("circle, .hero-img, .quality-img")
+                .attr("opacity", n => (n.id === d.id || relatedNodeIds.has(n.id)) ? 1 : 0.35);
+            
+            nodeGroup.selectAll(".hero-bg, .quality-bg")
+                .attr("stroke-width", n => (n.id === d.id) ? 4 : 2.5)
+                .attr("stroke", n => (n.id === d.id) ? "#ffaa00" : "#ffd700");
+            
+            updateInfoPanel(d);
+        }).on("mouseout", function() {
+            link.attr("stroke-opacity", 0.8)
+                .attr("stroke-width", 2);
+            
+            nodeGroup.selectAll("circle, .hero-img, .quality-img")
+                .attr("opacity", 1);
+            
+            nodeGroup.selectAll(".hero-bg, .quality-bg")
+                .attr("stroke-width", 2.5)
+                .attr("stroke", "#ffd700");
+        });
+        
+        nodeGroup.on("click", function(event, d) {
+            updateInfoPanel(d);
+            d3.select(this).select(".hero-bg, .quality-bg, circle")
+                .attr("stroke", "#ffaa00")
+                .attr("stroke-width", 4)
+                .transition()
+                .duration(300)
+                .attr("stroke-width", 2.5)
+                .attr("stroke", "#ffd700");
+        });
+    }
+    
+    function getNodeRadius(node) {
+        if (node.type === "hero") {
+            return 16 + Math.min(28, node.totalSkins * 1.3);
+        }
+        return 20;
+    }
+    
+    function drag(simulation) {
+        function dragstarted(event) {
+            if (!event.active) simulation.alphaTarget(0.3).restart();
+            event.subject.fx = event.subject.x;
+            event.subject.fy = event.subject.y;
+        }
+        function dragged(event) {
+            event.subject.fx = event.x;
+            event.subject.fy = event.y;
+        }
+        function dragended(event) {
+            if (!event.active) simulation.alphaTarget(0);
+            event.subject.fx = null;
+            event.subject.fy = null;
+        }
+        return d3.drag().on("start", dragstarted).on("drag", dragged).on("end", dragended);
+    }
+    
+    function drawRadar(heroName) {
+        const radarData = radarDataMap.get(heroName);
+        const container = document.getElementById("radarContainer");
+        
+        if (!radarData) {
+            container.style.display = "none";
+            return;
+        }
+        
+        container.style.display = "flex";
+        
+        const canvas = document.getElementById("radarCanvas");
+        const ctx = canvas.getContext("2d");
+        
+        // 使用高分辨率画布
+        const size = 620;
+        const centerX = size / 2;
+        const centerY = size / 2;
+        const radius = 230;
+        
+        canvas.width = size;
+        canvas.height = size;
+        
+        // 尺寸标注
+        const dimensions = ["生存能力", "攻击伤害", "技能效果", "上手难度", "生命值"];
+        const values = [
+            radarData.survival,
+            radarData.attack,
+            radarData.skill,
+            radarData.difficulty,
+            mapHpToRange(radarData.hp)
+        ];
+        
+        const angleStep = (Math.PI * 2) / dimensions.length;
+        
+        ctx.clearRect(0, 0, size, size);
+        
+        // 绘制背景网格（5层）
+        const levels = 5;
+        for (let level = 1; level <= levels; level++) {
+            const r = (radius / levels) * level;
+            ctx.beginPath();
+            for (let i = 0; i <= dimensions.length; i++) {
+                const angle = -Math.PI / 2 + i * angleStep;
+                const x = centerX + r * Math.cos(angle);
+                const y = centerY + r * Math.sin(angle);
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.closePath();
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
+            ctx.lineWidth = 1.2;
+            ctx.stroke();
+        }
+        
+        // 绘制轴线
+        for (let i = 0; i < dimensions.length; i++) {
+            const angle = -Math.PI / 2 + i * angleStep;
+            const x = centerX + radius * Math.cos(angle);
+            const y = centerY + radius * Math.sin(angle);
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.lineTo(x, y);
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.35)";
+            ctx.lineWidth = 1.2;
+            ctx.stroke();
+            
+            // 维度标签 - 更大更清晰
+            const labelRadius = radius + 32;
+            const labelX = centerX + labelRadius * Math.cos(angle);
+            const labelY = centerY + labelRadius * Math.sin(angle);
+            
+            ctx.font = "bold 16px 'Microsoft YaHei', 'PingFang SC', Arial, sans-serif";
+            ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            
+            // 添加文字阴影增强可读性
+            ctx.shadowColor = "rgba(0, 0, 0, 0.8)";
+            ctx.shadowBlur = 6;
+            ctx.fillText(dimensions[i], labelX, labelY);
+            ctx.shadowBlur = 0;
+        }
+        
+        // 绘制数据区域
+        const dataPoints = [];
+        for (let i = 0; i < dimensions.length; i++) {
+            let value = values[i];
+            value = Math.min(8, Math.max(0, value));
+            const r = (value / 8) * radius;
+            const angle = -Math.PI / 2 + i * angleStep;
+            const x = centerX + r * Math.cos(angle);
+            const y = centerY + r * Math.sin(angle);
+            dataPoints.push({ x, y });
+        }
+        
+        ctx.beginPath();
+        for (let i = 0; i < dataPoints.length; i++) {
+            if (i === 0) ctx.moveTo(dataPoints[i].x, dataPoints[i].y);
+            else ctx.lineTo(dataPoints[i].x, dataPoints[i].y);
+        }
+        ctx.closePath();
+        ctx.fillStyle = "rgba(255, 107, 107, 0.35)";
+        ctx.fill();
+        ctx.strokeStyle = "#ff6b6b";
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        
+        // 绘制数据点
+        for (let i = 0; i < dataPoints.length; i++) {
+            ctx.beginPath();
+            ctx.arc(dataPoints[i].x, dataPoints[i].y, 5, 0, Math.PI * 2);
+            ctx.fillStyle = "#ff6b6b";
+            ctx.fill();
+            ctx.shadowBlur = 0;
+        }
+    }
+    
+    function updateInfoPanel(node) {
+        const contentDiv = document.getElementById("infoContent");
+        if (node.type === "hero") {
+            let qualityHtml = '';
+            for (const quality of qualities) {
+                const count = node.skinQuality[quality];
+                if (count && count > 0) {
+                    qualityHtml += `
+                        <div class="quality-item">
+                            <span class="quality-name">${quality}</span>
+                            <span class="quality-count">${count}</span>
+                        </div>
+                    `;
+                }
+            }
+            
+            contentDiv.innerHTML = `
+                <div class="hero-name">${node.name}</div>
+                <div class="hero-stat">皮肤数量：<strong>${node.totalSkins}</strong></div>
+                <div class="hero-stat">限定皮肤数量：<strong>${node.limited}</strong></div>
+                <div class="section-title">皮肤品质分布：</div>
+                <div class="quality-list">
+                    ${qualityHtml}
+                </div>
+            `;
+            
+            drawRadar(node.name);
+        } else {
+            const relatedHeroes = graphData.links.filter(l => l.target.id === node.name)
+                .map(l => ({ name: l.source.id, count: l.value }))
+                .sort((a,b) => b.count - a.count);
+            
+            let heroesHtml = '';
+            relatedHeroes.forEach(h => {
+                heroesHtml += `
+                    <div class="hero-list-item">
+                        <span class="hero-list-name">${h.name}</span>
+                        <span class="hero-list-count">${h.count}款</span>
+                    </div>
+                `;
+            });
+            
+            contentDiv.innerHTML = `
+                <div class="quality-name-large">${node.name}</div>
+                <div class="section-title">拥有此品质的英雄：</div>
+                <div class="hero-list">
+                    ${heroesHtml || '<div class="empty-tip">暂无</div>'}
+                </div>
+            `;
+            
+            document.getElementById("radarContainer").style.display = "none";
+        }
+    }
+    
+    let resizeTimeout;
+    function handleResize() {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(() => {
+            const newWidth = container.clientWidth;
+            const newHeight = container.clientHeight;
+            
+            if (newWidth !== width || newHeight !== height) {
+                width = newWidth;
+                height = newHeight;
+                
+                svg.attr("width", width).attr("height", height);
+                simulation.force("center", d3.forceCenter(width / 2, height / 2));
+                
+                if (nodeGroup) {
+                    nodeGroup.attr("transform", d => {
+                        d.x = Math.max(40, Math.min(width - 40, d.x));
+                        d.y = Math.max(40, Math.min(height - 40, d.y));
+                        return `translate(${d.x},${d.y})`;
+                    });
+                }
+                
+                simulation.alpha(0.3).restart();
+            }
+        }, 150);
+    }
+    
+    window.addEventListener("resize", handleResize);
+    
+    loadData();
+</script>
+</body>
+</html>
