@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>王者荣耀全英雄相似度网络图（带头像）</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Microsoft YaHei', 'PingFang SC', Arial, sans-serif; 
+            overflow: hidden;
+        }
+        /* 底图铺满全屏 */
+        .bg-image {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 0;
+        }
+        /* 返回首页按钮 - 左下角 */
+        .back-home-btn {
+            position: fixed;
+            bottom: 24px;
+            left: 24px;
+            background: rgba(0,0,0,0.6);
+            border: 1px solid rgba(200,180,120,0.4);
+            color: #d4c5a3;
+            padding: 8px 20px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            z-index: 999;
+            text-decoration: none;
+            transition: 0.2s;
+            font-family: 'Microsoft YaHei', 'PingFang SC', Arial, sans-serif;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+        .back-home-btn:hover {
+            background: rgba(200,180,120,0.2);
+            color: #ecd68a;
+            border-color: #c9a86b;
+            transform: translateY(-2px);
+        }
+        .back-home-btn:active {
+            transform: translateY(0);
+        }
+        /* 主容器 */
+        .container {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            width: 100vw;
+            height: 100vh;
+        }
+        /* 左侧边栏 - 完全透明 */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 300px;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.08);
+            backdrop-filter: blur(2px);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            pointer-events: auto;
+            transition: transform 0.3s ease;
+        }
+        .sidebar.closed {
+            transform: translateX(-100%);
+        }
+        /* 左侧边栏关闭按钮 */
+        .sidebar-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 20px;
+            cursor: pointer;
+            transition: color 0.2s;
+            z-index: 101;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.2);
+        }
+        .sidebar-close:hover {
+            color: #D4A574;
+            background: rgba(0, 0, 0, 0.3);
+        }
+        /* 打开左侧边栏的按钮 */
+        .sidebar-open-btn {
+            position: fixed;
+            left: 20px;
+            top: 20px;
+            width: 40px;
+            height: 40px;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(4px);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            z-index: 99;
+            transition: all 0.2s;
+            opacity: 0;
+            pointer-events: none;
+        }
+        .sidebar-open-btn.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .sidebar-open-btn:hover {
+            background: rgba(0, 0, 0, 0.5);
+            color: #D4A574;
+        }
+        .sidebar-header {
+            padding: 30px 25px 20px 25px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .sidebar-header h2 {
+            color: white;
+            font-size: 28px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        }
+        .sidebar-header p {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 14px;
+            letter-spacing: 1px;
+            text-shadow: 1px 1px 1px rgba(0,0,0,0.2);
+        }
+        /* 搜索框 */
+        .search-box {
+            padding: 15px 20px;
+            margin: 10px 15px;
+            background: rgba(0, 0, 0, 0.15);
+            backdrop-filter: blur(4px);
+            border-radius: 12px;
+        }
+        .search-box input {
+            width: 100%;
+            padding: 8px 12px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+            outline: none;
+        }
+        .search-box input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+        .search-box input:focus {
+            border-color: #D4A574;
+        }
+        /* 阈值滑块 */
+        .threshold-control {
+            padding: 15px 20px;
+            margin: 0 15px 10px 15px;
+            background: rgba(0, 0, 0, 0.15);
+            backdrop-filter: blur(4px);
+            border-radius: 12px;
+        }
+        .threshold-label {
+            color: white;
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+        .threshold-label span {
+            color: #D4A574;
+            font-weight: bold;
+        }
+        input[type="range"] {
+            width: 100%;
+            height: 4px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 2px;
+            outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #D4A574;
+            cursor: pointer;
+        }
+        /* 职业筛选按钮 */
+        .class-filter {
+            padding: 15px 20px;
+            margin: 0 15px;
+            background: rgba(0, 0, 0, 0.15);
+            backdrop-filter: blur(4px);
+            border-radius: 12px;
+        }
+        .filter-title {
+            color: white;
+            font-size: 13px;
+            margin-bottom: 10px;
+        }
+        .filter-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .filter-btn {
+            padding: 4px 12px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 20px;
+            color: white;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .filter-btn:hover {
+            background: rgba(0, 0, 0, 0.6);
+            border-color: #D4A574;
+        }
+        .filter-btn.active {
+            background: #D4A574;
+            border-color: #D4A574;
+            color: #1a1a2e;
+        }
+        /* 统计信息卡片 */
+        .stats-card {
+            padding: 20px 25px;
+            margin: 20px 20px;
+            background: rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(4px);
+            border-radius: 16px;
+        }
+        .stats-card .stat-item {
+            color: white;
+            font-size: 14px;
+            margin: 10px 0;
+            font-weight: 400;
+            letter-spacing: 0.5px;
+        }
+        .stats-card .stat-value {
+            font-weight: 600;
+            font-size: 20px;
+            margin-left: 10px;
+        }
+        /* 图例 */
+        .legend {
+            padding: 15px 25px;
+            margin: 0 20px;
+            background: rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(4px);
+            border-radius: 16px;
+        }
+        .legend-title {
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 12px;
+        }
+        .legend-color {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        .legend-line {
+            width: 20px;
+            height: 2px;
+            background: #D4A574;
+            margin-right: 10px;
+        }
+        .legend-border {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            border: 2px solid #D4A574;
+            margin-right: 10px;
+        }
+        /* 右侧详情面板 */
+        .detail-panel {
+            position: fixed;
+            right: 0;
+            top: 0;
+            width: 300px;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(8px);
+            border-left: 1px solid rgba(255, 255, 255, 0.15);
+            z-index: 200;
+            transform: translateX(100%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            pointer-events: auto;
+        }
+        .detail-panel.show {
+            transform: translateX(0);
+        }
+        .detail-header {
+            padding: 30px 20px 20px 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .detail-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            margin: 0 auto 16px;
+            border: 3px solid #D4A574;
+            overflow: hidden;
+            background: rgba(0, 0, 0, 0.2);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+        .detail-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .detail-name {
+            font-size: 22px;
+            font-weight: 600;
+            color: white;
+            margin-bottom: 6px;
+            letter-spacing: 1px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        }
+        .detail-stats {
+            padding: 20px;
+            flex: 1;
+        }
+        .detail-stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .detail-stat-label {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 14px;
+            font-weight: 400;
+        }
+        .detail-stat-value {
+            color: white;
+            font-size: 20px;
+            font-weight: 600;
+        }
+        .close-detail {
+            position: absolute;
+            top: 16px;
+            right: 18px;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 20px;
+            cursor: pointer;
+            transition: color 0.2s;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+        .close-detail:hover {
+            color: #D4A574;
+        }
+        /* 图表容器 */
+        #chart {
+            flex: 1;
+            width: 100%;
+            height: 100vh;
+        }
+
+        /* 移动端适配 */
+        @media (max-width: 768px) {
+            .back-home-btn {
+                bottom: 16px;
+                left: 16px;
+                padding: 6px 14px;
+                font-size: 0.75rem;
+            }
+            .sidebar {
+                width: 260px;
+            }
+            .sidebar-header h2 {
+                font-size: 22px;
+            }
+            .detail-panel {
+                width: 260px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 底图铺满全屏 -->
+    <img src="底图.jpg" alt="background" class="bg-image" id="bgImage">
+    
+    <!-- 返回首页按钮 - 左下角 -->
+    <a href="../index.html" class="back-home-btn">← 返回首页</a>
+    
+    <div class="container">
+        <div id="chart"></div>
+    </div>
+
+    <!-- 左侧边栏 -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-close" id="sidebarClose">✕</div>
+        <div class="sidebar-header">
+            <h2>王者荣耀</h2>
+            <p>英雄相似度网络图</p>
+        </div>
+        
+        <!-- 搜索框 -->
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="🔍 输入英雄名后按回车搜索...">
+        </div>
+        
+        <!-- 阈值滑块 -->
+        <div class="threshold-control">
+            <div class="threshold-label">相似度阈值: <span id="thresholdValue">0.93</span></div>
+            <input type="range" id="thresholdSlider" min="0.85" max="0.98" step="0.005" value="0.93">
+        </div>
+        
+        <!-- 职业筛选 -->
+        <div class="class-filter">
+            <div class="filter-title">职业筛选</div>
+            <div class="filter-buttons" id="classButtons">
+                <button class="filter-btn active" data-class="all">全部</button>
+                <button class="filter-btn" data-class="坦克">坦克</button>
+                <button class="filter-btn" data-class="战士">战士</button>
+                <button class="filter-btn" data-class="刺客">刺客</button>
+                <button class="filter-btn" data-class="法师">法师</button>
+                <button class="filter-btn" data-class="射手">射手</button>
+                <button class="filter-btn" data-class="辅助">辅助</button>
+            </div>
+        </div>
+        
+        <!-- 统计信息 -->
+        <div class="stats-card" id="statsCard">
+            <div class="stat-item">显示英雄: <span class="stat-value" id="displayHeroes" style="color: #82B4FF;">--</span></div>
+            <div class="stat-item">相似关系: <span class="stat-value" id="displayLinks" style="color: #82B4FF;">--</span></div>
+            <div class="stat-item">总英雄数: <span class="stat-value" id="totalHeroes" style="color: #82B4FF;">--</span></div>
+        </div>
+        
+        <div class="legend">
+            <div class="legend-title">图例说明</div>
+            <div class="legend-item"><div class="legend-color" style="background: #6ABF69;"></div> 高胜率 ≥52%</div>
+            <div class="legend-item"><div class="legend-color" style="background: #E8A735;"></div> 中胜率 48%-52%</div>
+            <div class="legend-item"><div class="legend-color" style="background: #E07A5F;"></div> 低胜率 &lt;48%</div>
+            <div class="legend-item"><div class="legend-line"></div> 连线 = 数据相似</div>
+            <div class="legend-item"><div class="legend-border"></div> 圆圈大小 = 登场率</div>
+        </div>
+    </div>
+
+    <!-- 打开左侧边栏的按钮 -->
+    <div class="sidebar-open-btn" id="sidebarOpenBtn">☰</div>
+
+    <!-- 右侧详情面板 -->
+    <div class="detail-panel" id="detailPanel">
+        <div class="close-detail" id="closeDetail">✕</div>
+        <div class="detail-header">
+            <div class="detail-avatar" id="detailAvatar">
+                <img id="detailAvatarImg" src="" alt="">
+            </div>
+            <div class="detail-name" id="detailName">--</div>
+        </div>
+        <div class="detail-stats">
+            <div class="detail-stat-row">
+                <span class="detail-stat-label">胜率</span>
+                <span class="detail-stat-value" id="detailWinRate">--</span>
+            </div>
+            <div class="detail-stat-row">
+                <span class="detail-stat-label">登场率</span>
+                <span class="detail-stat-value" id="detailPickRate">--</span>
+            </div>
+            <div class="detail-stat-row">
+                <span class="detail-stat-label">KDA</span>
+                <span class="detail-stat-value" id="detailKda">--</span>
+            </div>
+            <div class="detail-stat-row">
+                <span class="detail-stat-label">职业</span>
+                <span class="detail-stat-value" id="detailClass">--</span>
+            </div>
+            <div class="detail-stat-row">
+                <span class="detail-stat-label">胜率等级</span>
+                <span class="detail-stat-value" id="detailTier">--</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 配置
+        const IMAGE_PATH = 'images/';
+        const IMAGE_EXT = '.bmp';
+
+        let fullNodes = [];
+        let fullLinks = [];
+        let currentChart = null;
+        let currentFilterClass = 'all';
+        let currentThreshold = 0.93;
+        let currentSearchHero = null;
+        let avatarUrlMap = new Map();
+
+        // 左侧边栏关闭/打开功能
+        const sidebar = document.getElementById('sidebar');
+        const sidebarClose = document.getElementById('sidebarClose');
+        const sidebarOpenBtn = document.getElementById('sidebarOpenBtn');
+
+        sidebarClose.addEventListener('click', () => {
+            sidebar.classList.add('closed');
+            sidebarOpenBtn.classList.add('show');
+        });
+
+        sidebarOpenBtn.addEventListener('click', () => {
+            sidebar.classList.remove('closed');
+            sidebarOpenBtn.classList.remove('show');
+        });
+
+        const detailPanel = document.getElementById('detailPanel');
+        const closeDetail = document.getElementById('closeDetail');
+
+        closeDetail.addEventListener('click', () => {
+            detailPanel.classList.remove('show');
+        });
+
+        // 柔和配色
+        const colorHigh = '#6ABF69';
+        const colorMid = '#E8A735';
+        const colorLow = '#E07A5F';
+
+        // 获取胜率等级文字
+        function getWinRateTier(winRate) {
+            if (winRate >= 52) return '高胜率 (强势)';
+            if (winRate >= 48) return '中胜率 (均衡)';
+            return '低胜率 (弱势)';
+        }
+
+        function getWinRateColor(winRate) {
+            if (winRate >= 52) return colorHigh;
+            if (winRate >= 48) return colorMid;
+            return colorLow;
+        }
+
+        function showDetail(heroData, avatarUrl) {
+            document.getElementById('detailName').textContent = heroData.name;
+            document.getElementById('detailWinRate').textContent = heroData.winRate + '%';
+            document.getElementById('detailPickRate').textContent = heroData.pickRate + '%';
+            document.getElementById('detailKda').textContent = heroData.kda;
+            document.getElementById('detailClass').textContent = heroData.class || '未知';
+            
+            const tier = getWinRateTier(heroData.winRate);
+            const tierColor = getWinRateColor(heroData.winRate);
+            const tierEl = document.getElementById('detailTier');
+            tierEl.textContent = tier;
+            tierEl.style.color = tierColor;
+            
+            const avatarImg = document.getElementById('detailAvatarImg');
+            if (avatarUrl) {
+                avatarImg.src = avatarUrl;
+                avatarImg.style.display = 'block';
+            } else {
+                avatarImg.src = '';
+                avatarImg.style.display = 'none';
+            }
+            
+            detailPanel.classList.add('show');
+        }
+
+        function processAvatar(imgSrc, heroName, winRate) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.crossOrigin = 'Anonymous';
+                
+                img.onload = function() {
+                    const size = Math.min(img.width, img.height);
+                    const radius = size / 2;
+                    const diameter = size;
+                    
+                    const canvas = document.createElement('canvas');
+                    canvas.width = diameter;
+                    canvas.height = diameter;
+                    const ctx = canvas.getContext('2d');
+                    
+                    if (!ctx) {
+                        resolve(null);
+                        return;
+                    }
+                    
+                    ctx.clearRect(0, 0, diameter, diameter);
+                    
+                    ctx.shadowOffsetX = 0;
+                    ctx.shadowOffsetY = 4;
+                    ctx.shadowColor = 'rgba(0,0,0,0.5)';
+                    ctx.shadowBlur = 10;
+                    
+                    let borderColor = getWinRateColor(winRate);
+                    
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.arc(radius, radius, radius - 2, 0, Math.PI * 2);
+                    ctx.strokeStyle = borderColor;
+                    ctx.lineWidth = 6;
+                    ctx.stroke();
+                    
+                    ctx.beginPath();
+                    ctx.arc(radius, radius, radius - 5, 0, Math.PI * 2);
+                    ctx.strokeStyle = '#FFFFFF';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                    
+                    ctx.beginPath();
+                    ctx.arc(radius, radius, radius - 6, 0, Math.PI * 2);
+                    ctx.clip();
+                    
+                    const sx = (img.width - size) / 2;
+                    const sy = (img.height - size) / 2;
+                    ctx.drawImage(img, sx, sy, size, size, 0, 0, diameter, diameter);
+                    ctx.restore();
+                    
+                    const dataURL = canvas.toDataURL('image/png');
+                    resolve(dataURL);
+                };
+                
+                img.onerror = function() {
+                    console.warn(`头像加载失败: ${heroName}`);
+                    resolve(null);
+                };
+                
+                img.src = imgSrc;
+            });
+        }
+
+        async function loadAllAvatars(nodes, onProgress) {
+            let loadedCount = 0;
+            for (const node of nodes) {
+                let fileName = node.name.replace(/[\\/:*?"<>|]/g, '_');
+                const imgPath = `${IMAGE_PATH}${fileName}${IMAGE_EXT}`;
+                const avatarBase64 = await processAvatar(imgPath, node.name, node.winRate);
+                if (avatarBase64) {
+                    avatarUrlMap.set(node.name, avatarBase64);
+                }
+                loadedCount++;
+                if (onProgress) onProgress(loadedCount, nodes.length);
+            }
+        }
+
+        // 根据筛选条件获取当前显示的节点和边
+        function getFilteredData() {
+            // 1. 按职业筛选节点
+            let filteredNodes = fullNodes;
+            if (currentFilterClass !== 'all') {
+                filteredNodes = fullNodes.filter(node => node.class === currentFilterClass);
+            }
+            
+            // 2. 如果有搜索的英雄，只显示该英雄及其关联节点
+            if (currentSearchHero) {
+                const searchNode = fullNodes.find(n => n.name === currentSearchHero);
+                if (searchNode) {
+                    // 找到所有与搜索英雄有边相连的英雄
+                    const connectedNodes = new Set();
+                    connectedNodes.add(currentSearchHero);
+                    
+                    fullLinks.forEach(link => {
+                        if (link.source === currentSearchHero) {
+                            connectedNodes.add(link.target);
+                        }
+                        if (link.target === currentSearchHero) {
+                            connectedNodes.add(link.source);
+                        }
+                    });
+                    
+                    // 只保留在连接集内且符合职业筛选的英雄
+                    filteredNodes = filteredNodes.filter(node => connectedNodes.has(node.name));
+                }
+            }
+            
+            const filteredNodeNames = new Set(filteredNodes.map(n => n.name));
+            
+            // 3. 按阈值筛选边（且边的两端节点都在筛选后的节点中）
+            let filteredLinks = fullLinks.filter(link => 
+                link.similarity >= currentThreshold &&
+                filteredNodeNames.has(link.source) &&
+                filteredNodeNames.has(link.target)
+            );
+            
+            return { nodes: filteredNodes, links: filteredLinks };
+        }
+
+        // 渲染图表
+        function renderChart() {
+            const { nodes, links } = getFilteredData();
+            
+            // 更新统计信息
+            document.getElementById('displayHeroes').textContent = nodes.length;
+            document.getElementById('displayLinks').textContent = links.length;
+            document.getElementById('totalHeroes').textContent = fullNodes.length;
+            
+            const chartNodes = nodes.map(node => {
+                const avatarBase64 = avatarUrlMap.get(node.name);
+                let symbolSize = Math.sqrt(node.pickRate) * 10 + 32;
+                let itemStyle = {};
+                
+                if (avatarBase64) {
+                    itemStyle = { borderColor: 'rgba(255,255,255,0.3)', borderWidth: 0 };
+                } else {
+                    itemStyle = {
+                        color: getWinRateColor(node.winRate)
+                    };
+                }
+                
+                // 搜索高亮：被搜索的英雄放大+发光
+                const isSearchTarget = currentSearchHero === node.name;
+                
+                return {
+                    name: node.name,
+                    winRate: node.winRate,
+                    pickRate: node.pickRate,
+                    kda: node.kda,
+                    class: node.class,
+                    symbolSize: isSearchTarget ? symbolSize * 1.5 : symbolSize,
+                    symbol: avatarBase64 ? `image://${avatarBase64}` : 'circle',
+                    itemStyle: isSearchTarget ? {
+                        ...itemStyle,
+                        borderColor: '#D4A574',
+                        borderWidth: 4,
+                        shadowBlur: 25,
+                        shadowColor: '#D4A574'
+                    } : itemStyle,
+                    label: { show: false }
+                };
+            });
+            
+            const option = {
+                backgroundColor: 'transparent',
+                title: {
+                    text: '王者荣耀英雄相似度网络图',
+                    subtext: `基于胜率、登场率、KDA计算 | 相似度阈值 ≥ ${currentThreshold} | 当前显示 ${nodes.length} 位英雄 | ${links.length} 条相似关系`,
+                    left: 'center',
+                    top: 15,
+                    textStyle: { color: 'white', fontSize: 16, fontWeight: 'bold', textShadow: '1px 1px 2px rgba(0,0,0,0.5)' },
+                    subtextStyle: { color: 'rgba(255,255,255,0.8)', fontSize: 11 }
+                },
+                tooltip: { show: false },
+                series: [{
+                    type: 'graph',
+                    layout: 'force',
+                    force: {
+                        repulsion: 800,
+                        edgeLength: 80,
+                        gravity: 0.08,
+                        friction: 0.1,
+                        layoutAnimation: true
+                    },
+                    data: chartNodes,
+                    links: links,
+                    roam: true,
+                    draggable: true,
+                    focusNodeAdjacency: false,
+                    lineStyle: {
+                        color: '#D4A574',
+                        curveness: 0.2,
+                        width: 1.3,
+                        opacity: 0.5,
+                        shadowBlur: 2,
+                        shadowColor: 'rgba(212,165,116,0.3)'
+                    },
+                    edgeSymbol: ['none', 'none'],
+                    emphasis: {
+                        scale: 1.15,
+                        lineStyle: { width: 2.5, color: '#D4A574', opacity: 0.9 }
+                    },
+                    roamZoom: true,
+                    roamPan: true,
+                    animationDuration: 800
+                }]
+            };
+            
+            if (currentChart) {
+                currentChart.setOption(option, true);
+            } else {
+                currentChart = echarts.init(document.getElementById('chart'));
+                currentChart.setOption(option);
+                
+                // 绑定悬停事件
+                currentChart.on('mouseover', function(params) {
+                    if (params.dataType === 'node' && params.data) {
+                        const heroName = params.data.name;
+                        const heroData = fullNodes.find(n => n.name === heroName);
+                        if (heroData) {
+                            const avatarBase64 = avatarUrlMap.get(heroName);
+                            showDetail(heroData, avatarBase64);
+                        }
+                    }
+                });
+                
+                window.addEventListener('resize', () => currentChart.resize());
+            }
+        }
+
+        // 执行搜索（回车时调用）
+        function performSearch() {
+            const searchInput = document.getElementById('searchInput');
+            const searchTerm = searchInput.value.trim();
+            
+            if (searchTerm === '') {
+                currentSearchHero = null;
+                renderChart();
+                return;
+            }
+            
+            const found = fullNodes.find(n => n.name === searchTerm);
+            if (found) {
+                currentSearchHero = found.name;
+                renderChart();
+                console.log(`已搜索到英雄: ${found.name}`);
+            } else {
+                console.warn(`未找到英雄: ${searchTerm}`);
+                searchInput.style.borderColor = '#E07A5F';
+                setTimeout(() => {
+                    searchInput.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+                }, 1000);
+            }
+        }
+
+        // 清除搜索
+        function clearSearch() {
+            currentSearchHero = null;
+            document.getElementById('searchInput').value = '';
+            renderChart();
+        }
+
+        // 初始化
+        fetch('hero_similarity_data.json')
+            .then(response => response.json())
+            .then(async (data) => {
+                fullNodes = data.nodes;
+                fullLinks = data.links;
+                
+                document.getElementById('totalHeroes').textContent = fullNodes.length;
+                
+                const loadingDiv = document.createElement('div');
+                loadingDiv.style.position = 'fixed';
+                loadingDiv.style.top = '50%';
+                loadingDiv.style.left = '50%';
+                loadingDiv.style.transform = 'translate(-50%, -50%)';
+                loadingDiv.style.backgroundColor = 'rgba(0,0,0,0.8)';
+                loadingDiv.style.color = '#D4A574';
+                loadingDiv.style.padding = '20px 40px';
+                loadingDiv.style.borderRadius = '16px';
+                loadingDiv.style.zIndex = '1000';
+                loadingDiv.style.fontSize = '14px';
+                loadingDiv.style.textAlign = 'center';
+                loadingDiv.innerHTML = '加载英雄头像中...<br><span id="loadingProgress">0</span> / ' + fullNodes.length;
+                document.body.appendChild(loadingDiv);
+                
+                await loadAllAvatars(fullNodes, (loaded, total) => {
+                    const progressSpan = document.getElementById('loadingProgress');
+                    if (progressSpan) {
+                        progressSpan.textContent = loaded;
+                    }
+                    if (loaded === total) {
+                        setTimeout(() => {
+                            loadingDiv.style.opacity = '0';
+                            setTimeout(() => loadingDiv.remove(), 500);
+                        }, 500);
+                    }
+                });
+                
+                renderChart();
+                
+                // 绑定搜索事件（回车触发）
+                const searchInput = document.getElementById('searchInput');
+                searchInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        performSearch();
+                    }
+                });
+                
+                // ESC 清除搜索
+                searchInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape') {
+                        clearSearch();
+                    }
+                });
+                
+                // 绑定阈值滑块
+                const slider = document.getElementById('thresholdSlider');
+                const thresholdValue = document.getElementById('thresholdValue');
+                slider.addEventListener('input', (e) => {
+                    currentThreshold = parseFloat(e.target.value);
+                    thresholdValue.textContent = currentThreshold.toFixed(3);
+                    renderChart();
+                });
+                
+                // 绑定职业筛选按钮
+                const classButtons = document.querySelectorAll('.filter-btn');
+                classButtons.forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        classButtons.forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+                        currentFilterClass = btn.dataset.class;
+                        renderChart();
+                    });
+                });
+                
+                console.log('✅ 网络图已加载 | 节点数:', fullNodes.length, '边数:', fullLinks.length);
+            })
+            .catch(error => {
+                console.error('加载失败:', error);
+                document.getElementById('totalHeroes').textContent = '错误';
+            });
+    </script>
+</body>
+</html>

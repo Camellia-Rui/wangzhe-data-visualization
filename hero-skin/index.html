@@ -22,6 +22,38 @@
             overflow: hidden;
         }
 
+        .back-home-btn {
+            position: fixed;
+            top: 20px;
+            left: 24px;
+            background: rgba(0,0,0,0.6);
+            border: 1px solid rgba(200,180,120,0.4);
+            color: #d4c5a3;
+            padding: 8px 20px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            z-index: 100;
+            text-decoration: none;
+            transition: 0.2s;
+            font-family: 'Microsoft YaHei', 'PingFang SC', Arial, sans-serif;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .back-home-btn:hover {
+            background: rgba(200,180,120,0.2);
+            color: #ecd68a;
+            border-color: #c9a86b;
+            transform: translateY(-1px);
+        }
+
+        .back-home-btn:active {
+            transform: translateY(0);
+        }
+
         .main-container {
             display: flex;
             width: 100%;
@@ -225,17 +257,42 @@
             padding: 6px;
         }
 
+        /* 加载提示 */
+        .loading-tip {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #ffd700;
+            font-size: 1.2rem;
+            background: rgba(0,0,0,0.7);
+            padding: 20px 40px;
+            border-radius: 12px;
+            z-index: 100;
+        }
+
         @media (max-width: 768px) {
             .sidebar { width: 300px; }
             .hero-name { font-size: 1.3rem; }
             #radarCanvas { max-width: 260px; }
+            .back-home-btn {
+                top: 12px;
+                left: 12px;
+                padding: 6px 14px;
+                font-size: 0.75rem;
+            }
         }
     </style>
 </head>
 <body>
+
+<a href="../index.html" class="back-home-btn">← 返回首页</a>
+
 <div class="main-container">
     <div class="chart-container">
-        <div id="network"></div>
+        <div id="network">
+            <div class="loading-tip">📊 加载数据中...</div>
+        </div>
     </div>
 
     <div class="sidebar">
@@ -299,16 +356,32 @@
         return ((clampedHp - HP_MIN) / (HP_MAX - HP_MIN)) * 8;
     }
 
+    // 移除加载提示
+    function removeLoadingTip() {
+        const tip = document.querySelector('.loading-tip');
+        if (tip) tip.remove();
+    }
+
     async function loadData() {
         try {
-            const heroesData = await d3.json("skin_data.json");
-            const radarData = await d3.json("data.json");
+            // 使用 fetch 加载数据
+            const heroesResponse = await fetch("skin_data.json");
+            if (!heroesResponse.ok) {
+                throw new Error(`skin_data.json 加载失败 (HTTP ${heroesResponse.status})`);
+            }
+            const heroesData = await heroesResponse.json();
+            
+            const radarResponse = await fetch("data.json");
+            if (!radarResponse.ok) {
+                throw new Error(`data.json 加载失败 (HTTP ${radarResponse.status})`);
+            }
+            const radarData = await radarResponse.json();
             
             radarData.forEach(item => {
                 radarDataMap.set(item.hero, item);
             });
             
-            console.log("加载成功:", heroesData.length, "个英雄");
+            console.log("✅ 加载成功:", heroesData.length, "个英雄");
             
             const heroNodes = heroesData.map(hero => ({
                 id: hero.hero,
@@ -346,17 +419,24 @@
             });
             graphData.links = links;
             
-            await preloadHeroImages(heroesData.map(h => h.hero));
-            await preloadQualityImages(qualities);
+            // 预加载图片
+            await Promise.all([
+                preloadHeroImages(heroesData.map(h => h.hero)),
+                preloadQualityImages(qualities)
+            ]);
+            
+            // 移除加载提示
+            removeLoadingTip();
             
             initChart();
         } catch (error) {
-            console.error("加载失败:", error);
+            console.error("❌ 加载失败:", error);
+            removeLoadingTip();
             document.getElementById("network").innerHTML = `
                 <div style="color:#ff8888; text-align:center; margin-top:80px; padding:20px; background:rgba(0,0,0,0.7); border-radius:12px;">
                     ❌ 加载数据失败！<br><br>
-                    请确保 skin_data.json 和 data.json 与 HTML 在同一目录<br>
-                    图片放在 Images 文件夹下
+                    <span style="font-size:0.8rem; color:#aaa;">错误信息：${error.message}</span><br><br>
+                    <span style="font-size:0.75rem; color:#888;">请确保 skin_data.json 和 data.json 与 HTML 在同一目录</span>
                 </div>
             `;
         }
@@ -376,7 +456,7 @@
                     if (loadedCount === total) resolve();
                 };
                 img.onerror = () => {
-                    console.warn(`英雄图片加载失败: ${IMAGE_PATH}${heroName}.png`);
+                    console.warn(`⚠️ 英雄图片加载失败: ${IMAGE_PATH}${heroName}.png`);
                     imageCache.set(heroName, null);
                     loadedCount++;
                     if (loadedCount === total) resolve();
@@ -400,7 +480,7 @@
                     if (loadedCount === total) resolve();
                 };
                 img.onerror = () => {
-                    console.warn(`品质图片加载失败: ${IMAGE_PATH}${qualityName}.jpg，使用纯色替代`);
+                    console.warn(`⚠️ 品质图片加载失败: ${IMAGE_PATH}${qualityName}.jpg`);
                     qualityImageCache.set(qualityName, null);
                     loadedCount++;
                     if (loadedCount === total) resolve();
