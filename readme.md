@@ -14,10 +14,10 @@
 
 | 页面 | 链接 |
 |------|------|
-| 总入口 | [wangzhe-data-visualization](c:\Users\Lenovo\Desktop\总入口.png) |
-| 英雄羁绊 | [hero-bond](c:\Users\Lenovo\Desktop\英雄羁绊.png) |
-| 英雄皮肤 | [hero-skin](c:\Users\Lenovo\Desktop\英雄皮肤.png) |
-| 英雄数据关系 | [hero-battle](c:\Users\Lenovo\Desktop\英雄数据.png) |
+| 总入口 | ![总入口](screenshots/总入口.png) |
+| 英雄羁绊 | ![英雄羁绊](screenshots/英雄羁绊.png) |
+| 英雄皮肤 | ![英雄皮肤](screenshots/英雄皮肤.png) |
+| 英雄数据关系 | ![英雄数据关系](screenshots/英雄数据.png) |
 
 ## 项目结构
 wangzhe-data-visualization/
