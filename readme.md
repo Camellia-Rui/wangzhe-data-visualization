@@ -20,30 +20,30 @@
 | 英雄数据关系 | ![英雄数据关系](screenshots/英雄数据.png) |
 
 ## 项目结构
-wangzhe-data-visualization/
-├── index.html # 总入口（三模块导航）
-├── README.md # 项目说明
-├── .gitignore # Git忽略文件
-│
-├── hero-bond/ # 1. 英雄羁绊模块
-│ ├── index.html # 力导向图主页面
-│ ├── data.json # 126英雄 × 312 羁绊数据
-│ ├── 峡谷.png # 背景图片
-│ ├── 王者世界.png # 背景图片
-│ ├── 稷下学宫.png # 背景图片
-│ └── images/ # 126个英雄头像（.bmp）
-│
-├── hero-skin/ # 2. 英雄皮肤关系网络
-│ ├── index.html # 二部图 + 雷达图
-│ ├── skin_data.json # 皮肤数据
-│ ├── data.json # 英雄属性雷达图数据
-│ └── Images/ # 英雄头像及品质图标
-│
-└── hero-battle/ # 3. 英雄数据关系网络图
-│ ├── index.html # 力导向聚类图
-│ ├── 底图.jpg # 背景图片    
-│ ├── images/ # 英雄头像（.bmp）
-│ └── hero_similarity_data.json # 128英雄数据
+wangzhe-data-visualization/  
+├── index.html # 总入口（三模块导航）  
+├── README.md # 项目说明  
+├── .gitignore # Git忽略文件  
+│  
+├── hero-bond/ # 1. 英雄羁绊模块  
+│ ├── index.html # 力导向图主页面  
+│ ├── data.json # 126英雄 × 312 羁绊数据  
+│ ├── 峡谷.png # 背景图片  
+│ ├── 王者世界.png # 背景图片  
+│ ├── 稷下学宫.png # 背景图片  
+│ └── images/ # 126个英雄头像（.bmp）  
+│  
+├── hero-skin/ # 2. 英雄皮肤关系网络  
+│ ├── index.html # 二部图 + 雷达图  
+│ ├── skin_data.json # 皮肤数据  
+│ ├── data.json # 英雄属性雷达图数据  
+│ └── Images/ # 英雄头像及品质图标  
+│  
+├──hero-battle/ # 3. 英雄数据关系网络图  
+│ ├── index.html # 力导向聚类图  
+│ ├── 底图.jpg # 背景图片      
+│ ├── images/ # 英雄头像（.bmp）  
+│ └── hero_similarity_data.json # 128英雄数据  
 └── 
 
 ## 模块功能
@@ -142,7 +142,7 @@ http://localhost:8080
 本项目仅供学习交流使用，王者荣耀素材版权归腾讯公司所有。
 
 ## 致谢
-ECharts - 百度开源可视化库
-D3.js - 数据驱动文档
-王者荣耀官方 - 英雄数据与素材
+ECharts - 百度开源可视化库  
+D3.js - 数据驱动文档  
+王者荣耀官方 - 英雄数据与素材  
 课程老师
